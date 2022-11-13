@@ -1,0 +1,58 @@
+; fname: arch_granular_flow.p2dat
+; base code for the granular flow through an aperture 
+;==============================================================================
+new
+
+define geometry
+  W = 0.15
+  W0 = 0.025
+  H = 0.35
+  H0 = 0.3
+end
+@geometry
+
+domain extent ([-W*1.5],[W*1.5])([-H],[H*2])
+domain condition destroy
+
+wall create id 1 vertices ([-W*0.5],@H) ([-W*0.5],0.0)
+wall create id 2 vertices ([-W*0.5],0.0) ([-W0*0.5],0.0)
+wall create id 3 vertices ([W0*0.5],0.0) ([W*0.5],0.0)
+wall create id 4 vertices ([W*0.5],0.0) ([W*0.5], @H)
+wall create id 5 vertices ([-W0*0.5],0.0) ([W0*0.5], 0.0)
+
+
+cmat default type ball-ball model linear ...
+    property kn 1e5 ks 1e5 fric 0.5 dp_nratio 0.1
+
+cmat default type ball-facet model linear ...
+    property kn 1e5 ks 1e5 fric 0.5  dp_nratio 0.1
+
+set random 10001
+ball distribute porosity 0.2 box ([-W*0.5],[W*0.5]) (0.0,@H) radius 0.00227 0.00227
+; 2D porosity was determined by converting the 3D porosity using equations by Ouyang and Li (1999)
+ball attribute density 2580
+cycle 1000 calm 50
+cycle 2000
+set timestep scale
+set gravity 0 -9.81
+ball delete range x [W*0.5] 100
+ball delete range x -100 [-W*0.5]
+solve arat 1e-4
+ball delete range y @H0 100
+set orientation on
+
+
+wall delete range set id 5
+
+
+set timestep auto
+
+
+solve
+
+save final
+
+
+return
+;==============================================================================
+; eof: arch_granular_flow.p2dat
